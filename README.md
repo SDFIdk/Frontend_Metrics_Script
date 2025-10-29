@@ -96,9 +96,57 @@ snap example:
 }
 */
 ```
+Sample Implementation (what I did)
+```js
+import {
+  recordEndpointEvent,
+  loadMetrics,
+} from './metrics.js'
+
+const fetchWithTimeout = async (url, options = {}) => {
+  const { timeout = retryOptions.timeout } = options
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  const response = await fetch(url, {
+    ...options,
+    signal: controller.signal
+  })
+  clearTimeout(timer)
+  return response
+}
+
+const fetchWithStats = async (url, options = {}) => {
+  const FIXED_TIMEOUT = 1000
+  const start = Date.now()
+  try {
+    const response = await fetchWithTimeout(url, { ...options, timeout: FIXED_TIMEOUT })
+    const took = Date.now() - start
+
+    // Treat configured status codes as failures for metrics
+    if (retryOptions.statusCodes.includes(response.status)) {
+      recordEndpointEvent(url, took, 'failed')
+      throw new Error('Bad response')
+    }
+
+    // Success
+    recordEndpointEvent(url, took, 'success')
+    return response
+  } catch (err) {
+    const took = Date.now() - start
+    const isTimeout = err && (err.name === 'AbortError' || /abort|timeout/i.test(String(err.message)))
+    recordEndpointEvent(url, took, isTimeout ? 'timeout' : 'failed')
+    throw err
+  }
+}
+```
+I then visited numerous endpoints from the client and ran
+```js 
+plotHistogramAllEndpoints()
+```
+from the devtools console, once I had gathered sufficient data. 
 
 ## License
-MIT — 
+MIT
 
 ## Contact
 Create Issues, PR's or push directly to main. It is mainly a utility script, but feel free to contact  @AAFredsted in case of questions.
