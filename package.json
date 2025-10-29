@@ -1,0 +1,12 @@
+{
+  "name": "mapstats",
+  "version": "0.0.1",
+  "description": "Simple Scripts To Embed in Websites for extracting statistics on http-requests",
+  "main": "metrics.js",
+  "scripts": {},
+  "author": "Malene Andrä-Fredsted",
+  "license": "MIT",
+  "dependencies": {
+    "plotly.js-dist-min": "^3.1.2"
+  }
+}
